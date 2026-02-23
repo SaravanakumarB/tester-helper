@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-// ─── localStorage helpers ────────────────────────────────────────────────────
+// --- localStorage helpers
 const LS_SAVED = "apiprobe_saved_apis";
 const LS_HISTORY = "apiprobe_history";
 const LS_AUTH = "apiprobe_global_auth";
@@ -26,22 +26,22 @@ function addToHistory(run) {
   saveHistory(h.slice(0, 50)); // keep latest 50
 }
 
-// ─── Utilities ───────────────────────────────────────────────────────────────
+// --- Utilities
 function generateScenarios(body, mandatoryKeys) {
   const scenarios = [];
   let parsed = {};
   try { parsed = JSON.parse(body || "{}"); } catch { parsed = {}; }
 
-  scenarios.push({ label: "✅ Positive — all mandatory fields present", type: "positive", body: { ...parsed } });
+  scenarios.push({ label: "[OK] Positive - all mandatory fields present", type: "positive", body: { ...parsed } });
 
   mandatoryKeys.forEach((key) => {
     if (!key.trim()) return;
-    scenarios.push({ label: `❌ Negative — "${key.trim()}" is null`, type: "negative", missingKey: key.trim(), body: { ...parsed, [key.trim()]: null } });
+    scenarios.push({ label: `[X] Negative - "${key.trim()}" is null`, type: "negative", missingKey: key.trim(), body: { ...parsed, [key.trim()]: null } });
   });
 
   mandatoryKeys.forEach((key) => {
     if (!key.trim()) return;
-    scenarios.push({ label: `❌ Negative — "${key.trim()}" is empty string`, type: "negative", missingKey: key.trim(), body: { ...parsed, [key.trim()]: "" } });
+    scenarios.push({ label: `[X] Negative - "${key.trim()}" is empty string`, type: "negative", missingKey: key.trim(), body: { ...parsed, [key.trim()]: "" } });
   });
 
   return scenarios;
@@ -65,12 +65,12 @@ async function hitApi(url, method, headers, bodyObj, isGraphQL, graphqlQuery, op
     if (!headersObj["Content-Type"] && !headersObj["content-type"]) headersObj["Content-Type"] = "application/json";
 
     let body;
-    if (isGraphQL) {
+    if (isGraphQL && graphqlQuery && graphqlQuery.trim()) {
       // bodyObj here is the variables object (e.g. { email: "...", deliveryMedium: "..." })
       // We must wrap it in the input key if the query uses $input pattern
       const opName = operationName || extractOperationName(graphqlQuery);
       // Detect if query uses a single $input variable wrapper
-      const usesInputWrapper = graphqlQuery && /\$input\s*:/.test(graphqlQuery);
+      const usesInputWrapper = /\$input\s*:/.test(graphqlQuery);
       const variables = usesInputWrapper ? { input: bodyObj } : bodyObj;
       const payload = { query: graphqlQuery, variables };
       if (opName) payload.operationName = opName;
@@ -97,7 +97,7 @@ function shortUrl(url) {
   try { const u = new URL(url); return u.hostname + u.pathname; } catch { return url; }
 }
 
-// ─── Global Auth Panel ───────────────────────────────────────────────────────
+// --- Global Auth Panel
 function GlobalAuthPanel() {
   const [auth, setAuth] = useState(loadGlobalAuth());
   const [saved, setSaved] = useState(false);
@@ -116,7 +116,7 @@ function GlobalAuthPanel() {
           <span className="global-auth-panel-sub">Applied to all APIs (unless disabled per-API)</span>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          {saved && <span className="save-toast">✓ Saved!</span>}
+          {saved && <span className="save-toast">v Saved!</span>}
           <label className="toggle-label">
             <input type="checkbox" checked={auth.enabled} onChange={e => setAuth({...auth, enabled: e.target.checked})} className="toggle-input"/>
             <span className="toggle-track"><span className="toggle-thumb"/></span>
@@ -131,7 +131,7 @@ function GlobalAuthPanel() {
         <input
           className="url-input"
           type="text"
-          placeholder="Paste your token or key here…"
+          placeholder="Paste your token or key here..."
           value={auth.token}
           onChange={e => setAuth({...auth, token: e.target.value})}
           style={{flex:1}}
@@ -143,10 +143,10 @@ function GlobalAuthPanel() {
   );
 }
 
-// ─── Save API Modal ──────────────────────────────────────────────────────────
+// --- Save API Modal
 function SaveModal({ onSave, onClose, existing }) {
-  const [name, setName] = useState(existing?.name || "");
-  const [desc, setDesc] = useState(existing?.desc || "");
+  const [name, setName] = useState(existing ? existing.name : "");
+  const [desc, setDesc] = useState(existing ? existing.desc : "");
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -166,24 +166,127 @@ function SaveModal({ onSave, onClose, existing }) {
   );
 }
 
-// ─── Page: Welcome ───────────────────────────────────────────────────────────
+// --- Page: Welcome
 function WelcomePage({ onStart, savedCount, historyCount }) {
   return (
     <div className="welcome-page">
       <div className="welcome-grid-bg" />
       <div className="welcome-content">
-        <div className="welcome-badge">✦ API Testing Suite</div>
+
+        {/* Hero illustration */}
+        <div className="hero-img-wrap">
+          <svg viewBox="0 0 440 260" xmlns="http://www.w3.org/2000/svg" className="hero-left-svg">
+
+            {/* App background */}
+            <rect width="440" height="260" fill="#f4f4f4"/>
+
+            {/* Top nav bar */}
+            <rect width="440" height="38" fill="#231212"/>
+            <circle cx="18" cy="19" r="5" fill="#c62828" opacity="0.7"/>
+            <circle cx="34" cy="19" r="5" fill="#f59e0b" opacity="0.8"/>
+            <circle cx="50" cy="19" r="5" fill="#2e7d32" opacity="0.7"/>
+            <rect x="72" y="12" width="60" height="14" rx="7" fill="white" opacity="0.1"/>
+            <text x="102" y="23" textAnchor="middle" fontSize="9" fill="white" fontFamily="sans-serif" fontWeight="600" opacity="0.9">Tester Helper</text>
+            <rect x="144" y="14" width="42" height="10" rx="5" fill="white" opacity="0.07"/>
+            <text x="165" y="23" textAnchor="middle" fontSize="8" fill="white" opacity="0.6" fontFamily="sans-serif">Explorer</text>
+            <rect x="192" y="14" width="36" height="10" rx="5" fill="white" opacity="0.07"/>
+            <text x="210" y="23" textAnchor="middle" fontSize="8" fill="white" opacity="0.6" fontFamily="sans-serif">Saved</text>
+            <rect x="234" y="14" width="36" height="10" rx="5" fill="white" opacity="0.07"/>
+            <text x="252" y="23" textAnchor="middle" fontSize="8" fill="white" opacity="0.6" fontFamily="sans-serif">History</text>
+
+            {/* URL bar */}
+            <rect x="12" y="48" width="416" height="28" rx="8" fill="white" stroke="#e2e0ed" strokeWidth="1"/>
+            <rect x="18" y="55" width="36" height="14" rx="7" fill="#6c5ce7" opacity="0.15"/>
+            <text x="36" y="66" textAnchor="middle" fontSize="9" fill="#6c5ce7" fontFamily="monospace" fontWeight="700">POST</text>
+            <rect x="60" y="59" width="280" height="6" rx="3" fill="#e2e0ed"/>
+            <text x="62" y="65" fontSize="8" fill="#8a8490" fontFamily="monospace">https://api.example.com/v1/auth/login</text>
+            <rect x="354" y="54" width="66" height="20" rx="10" fill="#231212"/>
+            <text x="387" y="68" textAnchor="middle" fontSize="9" fill="white" fontFamily="sans-serif" fontWeight="700">Run Tests</text>
+
+            {/* Two columns */}
+            {/* Left col - Request config */}
+            <rect x="12" y="86" width="210" height="164" rx="10" fill="white" stroke="#e2e0ed" strokeWidth="1"/>
+            {/* Tab bar */}
+            <rect x="12" y="86" width="210" height="24" rx="10" fill="#f0eff6"/>
+            <rect x="12" y="96" width="210" height="14" fill="#f0eff6"/>
+            <rect x="18" y="90" width="40" height="14" rx="7" fill="#231212"/>
+            <text x="38" y="101" textAnchor="middle" fontSize="8" fill="white" fontFamily="sans-serif" fontWeight="600">Body</text>
+            <text x="80" y="101" textAnchor="middle" fontSize="8" fill="#8a8490" fontFamily="sans-serif">Headers</text>
+            <text x="120" y="101" textAnchor="middle" fontSize="8" fill="#8a8490" fontFamily="sans-serif">GraphQL</text>
+            {/* JSON body */}
+            <text x="22" y="126" fontSize="8" fill="#8a8490" fontFamily="monospace">{"{"}</text>
+            <text x="30" y="140" fontSize="8" fill="#6c5ce7" fontFamily="monospace">"email":</text>
+            <text x="74" y="140" fontSize="8" fill="#2e7d32" fontFamily="monospace">"user@test.com"</text>
+            <text x="30" y="154" fontSize="8" fill="#6c5ce7" fontFamily="monospace">"password":</text>
+            <text x="82" y="154" fontSize="8" fill="#c62828" fontFamily="monospace">"secret123"</text>
+            <text x="30" y="168" fontSize="8" fill="#6c5ce7" fontFamily="monospace">"remember":</text>
+            <text x="84" y="168" fontSize="8" fill="#f59e0b" fontFamily="monospace">true</text>
+            <text x="22" y="182" fontSize="8" fill="#8a8490" fontFamily="monospace">{"}"}</text>
+            {/* Mandatory keys */}
+            <rect x="18" y="192" width="50" height="12" rx="6" fill="#e3e2f7"/>
+            <text x="43" y="202" textAnchor="middle" fontSize="7" fill="#6c5ce7" fontFamily="monospace" fontWeight="600">email x</text>
+            <rect x="74" y="192" width="60" height="12" rx="6" fill="#e3e2f7"/>
+            <text x="104" y="202" textAnchor="middle" fontSize="7" fill="#6c5ce7" fontFamily="monospace" fontWeight="600">password x</text>
+            <rect x="140" y="192" width="72" height="12" rx="6" fill="#f0eff6" stroke="#e2e0ed" strokeWidth="1"/>
+            <text x="176" y="202" textAnchor="middle" fontSize="7" fill="#8a8490" fontFamily="sans-serif">+ add key</text>
+
+            {/* Right col - Results */}
+            <rect x="230" y="86" width="198" height="164" rx="10" fill="white" stroke="#e2e0ed" strokeWidth="1"/>
+            <text x="242" y="102" fontSize="8" fill="#8a8490" fontFamily="sans-serif" fontWeight="600" textDecoration="uppercase" letterSpacing="0.5">TEST RESULTS</text>
+
+            {/* Result row 1 - pass */}
+            <rect x="238" y="108" width="182" height="30" rx="7" fill="#f0fdf4" stroke="#bbf7d0" strokeWidth="1"/>
+            <rect x="244" y="116" width="30" height="12" rx="6" fill="#2e7d32" opacity="0.15"/>
+            <text x="259" y="126" textAnchor="middle" fontSize="8" fill="#2e7d32" fontFamily="monospace" fontWeight="700">200</text>
+            <text x="280" y="121" fontSize="7" fill="#231212" fontFamily="sans-serif" fontWeight="600">Positive - all fields</text>
+            <text x="280" y="131" fontSize="7" fill="#8a8490" fontFamily="sans-serif">All mandatory fields present</text>
+            <rect x="370" y="116" width="42" height="12" rx="6" fill="#e3e2f7"/>
+            <text x="391" y="126" textAnchor="middle" fontSize="7" fill="#6c5ce7" fontFamily="monospace">118ms</text>
+
+            {/* Result row 2 - fail */}
+            <rect x="238" y="144" width="182" height="30" rx="7" fill="#fff1f2" stroke="#fecdd3" strokeWidth="1"/>
+            <rect x="244" y="152" width="30" height="12" rx="6" fill="#c62828" opacity="0.12"/>
+            <text x="259" y="162" textAnchor="middle" fontSize="8" fill="#c62828" fontFamily="monospace" fontWeight="700">422</text>
+            <text x="280" y="157" fontSize="7" fill="#231212" fontFamily="sans-serif" fontWeight="600">Negative - email null</text>
+            <text x="280" y="167" fontSize="7" fill="#8a8490" fontFamily="sans-serif">Validation failed as expected</text>
+            <rect x="370" y="152" width="42" height="12" rx="6" fill="#e3e2f7"/>
+            <text x="391" y="162" textAnchor="middle" fontSize="7" fill="#6c5ce7" fontFamily="monospace">95ms</text>
+
+            {/* Result row 3 - fail */}
+            <rect x="238" y="180" width="182" height="30" rx="7" fill="#fff1f2" stroke="#fecdd3" strokeWidth="1"/>
+            <rect x="244" y="188" width="30" height="12" rx="6" fill="#c62828" opacity="0.12"/>
+            <text x="259" y="198" textAnchor="middle" fontSize="8" fill="#c62828" fontFamily="monospace" fontWeight="700">400</text>
+            <text x="280" y="193" fontSize="7" fill="#231212" fontFamily="sans-serif" fontWeight="600">Negative - password null</text>
+            <text x="280" y="203" fontSize="7" fill="#8a8490" fontFamily="sans-serif">Bad request - required field</text>
+            <rect x="370" y="188" width="42" height="12" rx="6" fill="#e3e2f7"/>
+            <text x="391" y="198" textAnchor="middle" fontSize="7" fill="#6c5ce7" fontFamily="monospace">102ms</text>
+
+            {/* Summary bar */}
+            <rect x="230" y="220" width="198" height="22" rx="8" fill="#f0eff6" stroke="#e2e0ed" strokeWidth="1"/>
+            <rect x="238" y="226" width="28" height="10" rx="5" fill="#2e7d32" opacity="0.15"/>
+            <text x="252" y="235" textAnchor="middle" fontSize="7" fill="#2e7d32" fontFamily="sans-serif" fontWeight="700">1 pass</text>
+            <rect x="272" y="226" width="28" height="10" rx="5" fill="#c62828" opacity="0.1"/>
+            <text x="286" y="235" textAnchor="middle" fontSize="7" fill="#c62828" fontFamily="sans-serif" fontWeight="700">2 fail</text>
+            <text x="330" y="235" fontSize="7" fill="#8a8490" fontFamily="sans-serif">avg response</text>
+            <rect x="378" y="226" width="42" height="10" rx="5" fill="#e3e2f7"/>
+            <text x="399" y="235" textAnchor="middle" fontSize="7" fill="#6c5ce7" fontFamily="monospace" fontWeight="600">105ms</text>
+
+          </svg>
+        </div>
+
+        <div className="welcome-badge">* API Testing Suite</div>
+        <button className="btn-primary btn-lg" onClick={onStart} style={{alignSelf:"flex-start",marginBottom:20}}>Open Explorer</button>
         <h1 className="welcome-title">
           <span className="title-line1">Test</span>
           <span className="title-line2">Smarter.</span>
           <span className="title-line3">Ship Confident.</span>
         </h1>
         <p className="welcome-sub">
-          Automatically generate positive & negative test scenarios for any API.
-          Save your APIs, track history, and get detailed reports — all locally.
+          Auto-generate positive &amp; negative test scenarios for any API.
+          Save configs, track history, and get full reports - locally.
         </p>
         <div className="welcome-features">
-          {["REST & GraphQL support", "Auto negative-case generation", "Save APIs locally", "Full test history"].map(f => (
+          {["REST & GraphQL", "Auto test cases", "Save APIs", "History"].map(f => (
             <div className="feature-chip" key={f}>{f}</div>
           ))}
         </div>
@@ -191,38 +294,8 @@ function WelcomePage({ onStart, savedCount, historyCount }) {
           <div className="mini-stat"><span className="mini-num">{savedCount}</span><span className="mini-label">Saved APIs</span></div>
           <div className="mini-stat"><span className="mini-num">{historyCount}</span><span className="mini-label">Test Runs</span></div>
         </div>
-        <button className="btn-primary btn-lg" onClick={onStart}>Open Explorer →</button>
       </div>
       <div className="welcome-visual">
-        {/* Blurred bg image */}
-        <div className="visual-bg-image">
-          <svg viewBox="0 0 700 600" xmlns="http://www.w3.org/2000/svg" className="bg-svg">
-            <defs>
-              <linearGradient id="bm" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#6c5ce7" stopOpacity="0.18"/><stop offset="100%" stopColor="#231212" stopOpacity="0.08"/></linearGradient>
-            </defs>
-            {/* Abstract API grid shapes — blurred in background */}
-            <rect x="80" y="60" width="160" height="110" rx="16" fill="url(#bm)"/>
-            <rect x="460" y="80" width="140" height="90" rx="16" fill="url(#bm)"/>
-            <rect x="260" y="200" width="180" height="120" rx="16" fill="url(#bm)"/>
-            <rect x="60" y="300" width="130" height="80" rx="16" fill="url(#bm)"/>
-            <rect x="490" y="300" width="150" height="100" rx="16" fill="url(#bm)"/>
-            <rect x="200" y="430" width="300" height="80" rx="16" fill="url(#bm)"/>
-            {/* Connection lines */}
-            <path d="M160 115 Q310 115 350 260" stroke="#6c5ce7" strokeWidth="2" fill="none" opacity="0.2"/>
-            <path d="M530 125 Q430 125 350 260" stroke="#6c5ce7" strokeWidth="2" fill="none" opacity="0.2"/>
-            <path d="M125 340 Q200 340 260 320" stroke="#6c5ce7" strokeWidth="2" fill="none" opacity="0.2"/>
-            <path d="M565 350 Q490 340 440 320" stroke="#6c5ce7" strokeWidth="2" fill="none" opacity="0.2"/>
-            <path d="M350 320 Q350 400 350 430" stroke="#6c5ce7" strokeWidth="2" fill="none" opacity="0.2"/>
-            {/* Circles */}
-            <circle cx="160" cy="115" r="30" fill="#6c5ce7" opacity="0.12"/>
-            <circle cx="530" cy="125" r="26" fill="#6c5ce7" opacity="0.12"/>
-            <circle cx="350" cy="260" r="40" fill="#231212" opacity="0.08"/>
-            <circle cx="125" cy="340" r="22" fill="#6c5ce7" opacity="0.12"/>
-            <circle cx="565" cy="350" r="22" fill="#6c5ce7" opacity="0.12"/>
-          </svg>
-        </div>
-
-        {/* How to use guide */}
         <div className="how-to-use">
           <div className="how-to-header">
             <span className="how-to-badge">How it works</span>
@@ -236,7 +309,7 @@ function WelcomePage({ onStart, savedCount, historyCount }) {
               <div className="step-content">
                 <div className="step-title">Set Global Authorization <span className="step-tag">Optional</span></div>
                 <div className="step-desc">
-                  Go to <strong>Explorer</strong> → top panel shows <em>🔑 Global Authorization</em>. Paste your Bearer token or API key once. It will be automatically added to every API request.
+                  Go to <strong>Explorer</strong>  -  the top panel shows <em>Global Authorization</em>. Paste your Bearer token or API key once. It will be automatically injected into every API request.
                 </div>
               </div>
             </div>
@@ -246,7 +319,7 @@ function WelcomePage({ onStart, savedCount, historyCount }) {
               <div className="step-content">
                 <div className="step-title">Configure Your API</div>
                 <div className="step-desc">
-                  In the <strong>Explorer</strong>, enter your API URL and select method (GET, POST…). Use the <em>Body</em> tab for JSON payload, <em>Headers</em> tab for custom headers, or <em>GraphQL</em> tab for mutations/queries.
+                  Enter your API URL and select method (GET, POST...). Use the <em>Body</em> tab for JSON payload, <em>Headers</em> tab for custom headers, or <em>GraphQL</em> tab for mutations and queries.
                 </div>
                 <div className="step-chips">
                   <span className="step-chip">REST</span>
@@ -262,7 +335,7 @@ function WelcomePage({ onStart, savedCount, historyCount }) {
               <div className="step-content">
                 <div className="step-title">Add Mandatory Keys</div>
                 <div className="step-desc">
-                  Add the required fields of your API (e.g. <code>email</code>, <code>password</code>). The app auto-generates <strong>positive</strong> and <strong>negative</strong> test cases — setting each key to <code>null</code> and <code>""</code> one at a time.
+                  Add required fields of your API (e.g. <code>email</code>, <code>password</code>). The app auto-generates <strong>positive</strong> and <strong>negative</strong> test cases  -  setting each key to <code>null</code> and <code>""</code> one by one.
                 </div>
               </div>
             </div>
@@ -270,9 +343,9 @@ function WelcomePage({ onStart, savedCount, historyCount }) {
             <div className="step-item">
               <div className="step-num">4</div>
               <div className="step-content">
-                <div className="step-title">Run Tests & View Report</div>
+                <div className="step-title">Run Tests &amp; View Report</div>
                 <div className="step-desc">
-                  Click <strong>▶ Run Tests</strong>. Each scenario is hit live and the <em>Report</em> shows status code, response time, full request body and response — side by side. All runs are saved in <strong>History</strong>.
+                  Click <strong>Run Tests</strong>. Every scenario is hit live and the <em>Report</em> shows status code, response time, and full request/response side by side. All runs are saved in <strong>History</strong>.
                 </div>
                 <div className="step-chips">
                   <span className="step-chip green">200 OK</span>
@@ -283,11 +356,11 @@ function WelcomePage({ onStart, savedCount, historyCount }) {
             </div>
 
             <div className="step-item">
-              <div className="step-num">💾</div>
+              <div className="step-num">5</div>
               <div className="step-content">
-                <div className="step-title">Save, Export & Import</div>
+                <div className="step-title">Save, Export &amp; Import</div>
                 <div className="step-desc">
-                  Save any API config via <strong>＋ Save API</strong>. Revisit from <em>Saved APIs</em> page — load into Explorer, run directly, or <strong>export</strong> as JSON to share with teammates. Import configs shared by others in one click.
+                  Save any API config via <strong>Save API</strong>. Revisit from the <em>Saved APIs</em> page  -  load into Explorer, run directly, or <strong>export</strong> as JSON to share with teammates. Import configs in one click.
                 </div>
               </div>
             </div>
@@ -295,26 +368,42 @@ function WelcomePage({ onStart, savedCount, historyCount }) {
           </div>
         </div>
       </div>
+    </div>
   );
 }
 
-// ─── Page: Explorer ──────────────────────────────────────────────────────────
-function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
-  const [url, setUrl] = useState(initialConfig?.url || "https://jsonplaceholder.typicode.com/posts");
-  const [method, setMethod] = useState(initialConfig?.method || "POST");
-  const [body, setBody] = useState(initialConfig?.body || `{\n  "title": "Hello",\n  "body": "World",\n  "userId": 1\n}`);
-  const [headers, setHeaders] = useState(initialConfig?.headers || [{ key: "Content-Type", value: "application/json" }]);
-  const [mandatoryKeys, setMandatoryKeys] = useState(initialConfig?.mandatoryKeys || ["title", "userId"]);
+// --- Page: Explorer
+function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp }) {
+  // Always read fresh from localStorage so it updates after Save Auth is clicked
+  const [localAuth, setLocalAuth] = useState(loadGlobalAuth());
+  const globalAuth = localAuth;
+
+  // Re-read auth from localStorage every 500ms while on this page
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const fresh = loadGlobalAuth();
+      setLocalAuth(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(fresh)) return fresh;
+        return prev;
+      });
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+  const [url, setUrl] = useState(initialConfig ? initialConfig.url : "https://jsonplaceholder.typicode.com/posts");
+  const [method, setMethod] = useState(initialConfig ? initialConfig.method : "POST");
+  const [body, setBody] = useState(initialConfig ? initialConfig.body : `{\n  "title": "Hello",\n  "body": "World",\n  "userId": 1\n}`);
+  const [headers, setHeaders] = useState(initialConfig ? initialConfig.headers : [{ key: "Content-Type", value: "application/json" }]);
+  const [mandatoryKeys, setMandatoryKeys] = useState(initialConfig ? initialConfig.mandatoryKeys : ["title", "userId"]);
   const [newKey, setNewKey] = useState("");
-  const [isGraphQL, setIsGraphQL] = useState(initialConfig?.isGraphQL || false);
-  const [graphqlQuery, setGraphqlQuery] = useState(initialConfig?.graphqlQuery || `query {\n  users {\n    id\n    name\n  }\n}`);
-  const [operationName, setOperationName] = useState(initialConfig?.operationName || "");
+  const [isGraphQL, setIsGraphQL] = useState(initialConfig ? initialConfig.isGraphQL : false);
+  const [graphqlQuery, setGraphqlQuery] = useState(initialConfig ? initialConfig.graphqlQuery : `query {\n  users {\n    id\n    name\n  }\n}`);
+  const [operationName, setOperationName] = useState(initialConfig ? initialConfig.operationName : "");
   const [tab, setTab] = useState("body");
   const [loading, setLoading] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [editingId] = useState(initialConfig?.id || null);
-  const [useGlobalAuth, setUseGlobalAuth] = useState(initialConfig?.useGlobalAuth !== false);
+  const [editingId] = useState(initialConfig && initialConfig._fromSaved ? initialConfig.id : null);
+  const [useGlobalAuth, setUseGlobalAuth] = useState(initialConfig ? initialConfig.useGlobalAuth !== false : true);
 
   // sync if initialConfig changes (load from saved)
   useEffect(() => {
@@ -339,7 +428,12 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
     const list = loadSaved();
     if (editingId) {
       const idx = list.findIndex(a => a.id === editingId);
-      if (idx !== -1) { list[idx] = { ...list[idx], ...currentConfig(), name, desc, updatedAt: Date.now() }; }
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...currentConfig(), name, desc, updatedAt: Date.now() };
+      } else {
+        // Not found in saved (e.g. came from history) - save as new
+        list.unshift({ id: Date.now().toString(), name, desc, ...currentConfig(), createdAt: Date.now() });
+      }
     } else {
       list.unshift({ id: Date.now().toString(), name, desc, ...currentConfig(), createdAt: Date.now() });
     }
@@ -373,18 +467,20 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
     <div className="explorer-page">
       <div className="explorer-header">
         <div>
-          <h2 className="explorer-title">API Explorer {initialConfig?.name && <span className="loaded-name">— {initialConfig.name}</span>}</h2>
+          <h2 className="explorer-title">API Explorer {initialConfig && initialConfig.name && <span className="loaded-name">&#8212; {initialConfig.name}</span>}</h2>
           <p className="explorer-sub">Configure your API and define mandatory fields to auto-generate test scenarios.</p>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          {saveSuccess && <span className="save-toast">✓ Saved!</span>}
-          <button className="btn-secondary" onClick={() => setShowSaveModal(true)}>
-            {editingId ? "✎ Update Saved" : "＋ Save API"}
-          </button>
+          {saveSuccess
+            ? <span className="save-toast" style={{padding:"10px 22px",borderRadius:100,fontSize:14,fontWeight:700}}>Saved!</span>
+            : <button className="btn-secondary" onClick={() => setShowSaveModal(true)}>
+                {editingId ? "Update Saved API" : "+ Save API"}
+              </button>
+          }
         </div>
       </div>
 
-      {/* ── Global Auth Banner ── */}
+      {/* Global Auth Banner */}
       {globalAuth && globalAuth.token && (
         <div className="global-auth-banner">
           <div className="global-auth-left">
@@ -402,8 +498,10 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
       )}
       {globalAuth && !globalAuth.token && (
         <div className="global-auth-banner empty">
-          <span className="global-auth-icon">🔑</span>
-          <span style={{color:"var(--muted)",fontSize:13}}>No global auth set — configure it in the <strong>Auth</strong> section above the explorer</span>
+          <div className="global-auth-left">
+            <span className="global-auth-icon">🔑</span>
+            <span style={{color:"var(--muted)",fontSize:13}}>No global auth token set. Configure it in the <strong>Auth panel</strong> above.</span>
+          </div>
         </div>
       )}
 
@@ -420,7 +518,7 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
           </div>
 
           <div className="panel-section">
-            {isGraphQL && <div style={{marginBottom:8,fontSize:12,color:"var(--accent2)",fontFamily:"'JetBrains Mono',monospace",background:"rgba(78,204,163,0.08)",border:"1px solid rgba(78,204,163,0.2)",borderRadius:6,padding:"6px 12px"}}>⬡ GraphQL mode active — body will be sent as <strong>variables</strong></div>}
+            {isGraphQL && <div style={{marginBottom:8,fontSize:12,color:"var(--accent2)",fontFamily:"'JetBrains Mono',monospace",background:"rgba(78,204,163,0.08)",border:"1px solid rgba(78,204,163,0.2)",borderRadius:6,padding:"6px 12px"}}>GQL GraphQL mode active  -  body will be sent as <strong>variables</strong></div>}
             <div className="tabs">
               {["body","headers","graphql"].map(t => (
                 <button key={t} className={`tab-btn ${tab === t ? "active" : ""}`} onClick={() => {
@@ -428,7 +526,7 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
                   if (t === "graphql") setIsGraphQL(true);
                   else setIsGraphQL(false);
                 }}>
-                  {t === "graphql" ? "⬡ GraphQL" : t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t === "graphql" ? "GQL GraphQL" : t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
             </div>
@@ -440,7 +538,7 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
                     <input className="header-input" placeholder="Key" value={h.key} onChange={e => updateHeader(i, "key", e.target.value)} />
                     <span className="header-sep">:</span>
                     <input className="header-input" placeholder="Value" value={h.value} onChange={e => updateHeader(i, "value", e.target.value)} />
-                    <button className="btn-icon remove" onClick={() => removeHeader(i)}>✕</button>
+                    <button className="btn-icon remove" onClick={() => removeHeader(i)}>x</button>
                   </div>
                 ))}
                 <button className="btn-secondary" onClick={addHeader}>+ Add Header</button>
@@ -459,7 +557,7 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
                     />
                     {extractOperationName(graphqlQuery) && !operationName && (
                       <span style={{fontSize:12,color:"var(--accent2)",whiteSpace:"nowrap",fontFamily:"'JetBrains Mono',monospace"}}>
-                        ✓ auto
+                        v auto
                       </span>
                     )}
                   </div>
@@ -475,8 +573,8 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
                   />
                 </div>
                 <div style={{fontSize:12,color:"var(--muted)",background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:6,padding:"10px 14px",fontFamily:"'JetBrains Mono',monospace"}}>
-                  <span style={{color:"var(--accent)"}}>Variables</span> come from the <span style={{color:"var(--accent2)"}}>Body tab</span> — paste your variables JSON there.
-                  {/\$input\s*:/.test(graphqlQuery) && <span style={{display:"block",marginTop:4,color:"var(--accent2)"}}> ✓ <strong>$input</strong> wrapper detected — your body will be sent as <code>{"{ input: { ...body } }"}</code></span>}
+                  <span style={{color:"var(--accent)"}}>Variables</span> come from the <span style={{color:"var(--accent2)"}}>Body tab</span> &mdash; paste your variables JSON there.
+                  {/\$input\s*:/.test(graphqlQuery) && <span style={{display:"block",marginTop:4,color:"var(--accent2)"}}> v <strong>$input</strong> wrapper detected  -  your body will be sent as <code>{"{ input: { ...body } }"}</code></span>}
                 </div>
               </div>
             )}
@@ -489,7 +587,7 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
             <p className="field-hint">These keys will be individually nullified/emptied to generate negative test cases.</p>
             <div className="key-tags">
               {mandatoryKeys.map((k, i) => (
-                <div className="key-tag" key={i}><span>{k}</span><button onClick={() => removeMandatoryKey(i)}>✕</button></div>
+                <div className="key-tag" key={i}><span>{k}</span><button onClick={() => removeMandatoryKey(i)}>x</button></div>
               ))}
             </div>
             <div className="add-key-row">
@@ -507,17 +605,17 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
 
           <button className="btn-primary btn-run" onClick={handleSubmit} disabled={loading}>
             {loading ? <span className="spinner" /> : null}
-            {loading ? "Running Tests..." : "▶  Run Tests"}
+            {loading ? "Running Tests..." : ">  Run Tests"}
           </button>
         </div>
       </div>
 
-      {showSaveModal && <SaveModal onSave={handleSave} onClose={() => setShowSaveModal(false)} existing={editingId ? { name: initialConfig?.name, desc: initialConfig?.desc } : null} />}
+      {showSaveModal && <SaveModal onSave={handleSave} onClose={() => setShowSaveModal(false)} existing={editingId ? { name: initialConfig && initialConfig.name, desc: (initialConfig && initialConfig.desc) } : null} />}
     </div>
   );
 }
 
-// ─── Page: Saved APIs ────────────────────────────────────────────────────────
+// --- Page: Saved APIs
 function SavedPage({ onLoad, onRunDirect }) {
   const [saved, setSaved] = useState(loadSaved());
   const [search, setSearch] = useState("");
@@ -569,7 +667,7 @@ function SavedPage({ onLoad, onRunDirect }) {
         const parsed = JSON.parse(ev.target.result);
         const apis = Array.isArray(parsed) ? parsed : [parsed];
         // Validate basic shape
-        if (!apis.every(a => a.url && a.method)) throw new Error("Invalid format — each API needs url and method");
+        if (!apis.every(a => a.url && a.method)) throw new Error("Invalid format - each API needs url and method");
         const existing = loadSaved();
         // Merge: skip duplicates by id, add new ones
         const existingIds = new Set(existing.map(a => a.id));
@@ -577,7 +675,7 @@ function SavedPage({ onLoad, onRunDirect }) {
         const merged = [...newApis, ...existing];
         saveSaved(merged);
         refresh();
-        setImportSuccess(`✓ Imported ${newApis.length} API${newApis.length !== 1 ? "s" : ""} (${apis.length - newApis.length} skipped as duplicates)`);
+        setImportSuccess(`v Imported ${newApis.length} API${newApis.length !== 1 ? "s" : ""} (${apis.length - newApis.length} skipped as duplicates)`);
         setTimeout(() => setImportSuccess(""), 4000);
       } catch (err) {
         setImportError("Import failed: " + err.message);
@@ -599,19 +697,19 @@ function SavedPage({ onLoad, onRunDirect }) {
       <div className="page-header">
         <div>
           <h2 className="page-title">Saved APIs</h2>
-          <p className="page-sub">{saved.length} saved — load into Explorer or run directly</p>
+          <p className="page-sub">{saved.length} saved &mdash; load into Explorer or run directly</p>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-          <input className="search-input" placeholder="🔍  Search by name or URL…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="search-input" placeholder="🔍  Search by name or URL..." value={search} onChange={e => setSearch(e.target.value)} />
           {/* Import */}
           <label className="btn-secondary" style={{cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6,padding:"10px 18px",borderRadius:100,fontSize:13,fontWeight:500,border:"1px solid var(--border)",background:"var(--bg2)"}}>
-            ⬆ Import
+            Import
             <input type="file" accept=".json" onChange={handleImport} style={{display:"none"}}/>
           </label>
           {/* Export All */}
           {saved.length > 0 && (
             <button className="btn-secondary" style={{borderRadius:100,fontSize:13,fontWeight:500}} onClick={exportAll}>
-              ⬇ Export All
+              Export All
             </button>
           )}
         </div>
@@ -638,14 +736,14 @@ function SavedPage({ onLoad, onRunDirect }) {
                 <span className="saved-name">{api.name}</span>
               </div>
               <div style={{display:"flex",gap:4}}>
-                <button className="btn-icon" onClick={() => exportOne(api)} title="Export this API" style={{color:"var(--accent2)"}}>⬇</button>
-                <button className="btn-icon remove" onClick={() => setDeleteConfirm(api.id)} title="Delete">✕</button>
+                <button className="btn-icon" onClick={() => exportOne(api)} title="Export this API" style={{color:"var(--accent2)"}}>v</button>
+                <button className="btn-icon remove" onClick={() => setDeleteConfirm(api.id)} title="Delete">x</button>
               </div>
             </div>
             <div className="saved-url">{shortUrl(api.url)}</div>
             {api.desc && <div className="saved-desc">{api.desc}</div>}
             <div className="saved-meta">
-              <span>{api.mandatoryKeys?.length || 0} mandatory keys</span>
+              <span>{api.mandatoryKeys ? api.mandatoryKeys.length : 0} mandatory keys</span>
               <span>·</span>
               <span>{api.isGraphQL ? "GraphQL" : "REST"}</span>
               {api.useGlobalAuth !== false && <><span>·</span><span style={{color:"var(--accent2)"}}>🔑 Auth</span></>}
@@ -653,8 +751,8 @@ function SavedPage({ onLoad, onRunDirect }) {
               <span>{formatDate(api.createdAt)}</span>
             </div>
             <div className="saved-actions">
-              <button className="btn-secondary btn-sm" onClick={() => onLoad(api)}>✎ Load in Explorer</button>
-              <button className="btn-primary btn-sm" onClick={() => onRunDirect(api)}>▶ Run Tests</button>
+              <button className="btn-secondary btn-sm" onClick={() => onLoad(api)}>Edit Load in Explorer</button>
+              <button className="btn-primary btn-sm" onClick={() => onRunDirect(api)}>> Run Tests</button>
             </div>
             {deleteConfirm === api.id && (
               <div className="delete-confirm">
@@ -670,8 +768,8 @@ function SavedPage({ onLoad, onRunDirect }) {
   );
 }
 
-// ─── Page: History ────────────────────────────────────────────────────────────
-function HistoryPage({ onViewReport }) {
+// --- Page: History
+function HistoryPage({ onViewReport, onOpenExplorer }) {
   const [history, setHistory] = useState(loadHistory());
   const [search, setSearch] = useState("");
   const [filterResult, setFilterResult] = useState("all");
@@ -698,7 +796,7 @@ function HistoryPage({ onViewReport }) {
           <p className="page-sub">{history.length} test runs recorded locally (last 50 kept)</p>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-          <input className="search-input" placeholder="🔍  Filter by URL…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="search-input" placeholder="🔍  Filter by URL..." value={search} onChange={e => setSearch(e.target.value)} />
           <div className="filter-tabs">
             {["all","passed","failed"].map(f => (
               <button key={f} className={`filter-btn ${filterResult === f ? "active" : ""}`} onClick={() => setFilterResult(f)}>
@@ -738,17 +836,18 @@ function HistoryPage({ onViewReport }) {
                     <span>·</span>
                     <span>{run.results.length} scenarios</span>
                     <span>·</span>
-                    <span>{run.mandatoryKeys?.length || 0} mandatory keys</span>
+                    <span>{run.mandatoryKeys ? run.mandatoryKeys.length : 0} mandatory keys</span>
                     <span>·</span>
                     <span>avg {avgTime}ms</span>
                   </div>
                 </div>
               </div>
               <div className="history-right">
-                <span className="pass-badge">✅ {passed}</span>
-                <span className="fail-badge">❌ {failed}</span>
+                <span className="pass-badge">[OK] {passed}</span>
+                <span className="fail-badge">[X] {failed}</span>
+                <button className="btn-secondary btn-sm" onClick={() => onOpenExplorer(run)}>Open in Explorer</button>
                 <button className="btn-secondary btn-sm" onClick={() => onViewReport(run)}>View Report</button>
-                <button className="btn-icon remove" onClick={() => removeRun(run.id)}>✕</button>
+                <button className="btn-icon remove" onClick={() => removeRun(run.id)}>x</button>
               </div>
             </div>
           );
@@ -758,7 +857,7 @@ function HistoryPage({ onViewReport }) {
   );
 }
 
-// ─── Page: Report ─────────────────────────────────────────────────────────────
+// --- Page: Report
 function ReportPage({ data, onBack }) {
   const [expanded, setExpanded] = useState(null);
   const { url, method, results, timestamp } = data;
@@ -774,7 +873,7 @@ function ReportPage({ data, onBack }) {
           <div className="report-meta">{method} {url}</div>
           {timestamp && <div className="report-time">{formatDate(timestamp)}</div>}
         </div>
-        <button className="btn-secondary" onClick={onBack}>← Back</button>
+        <button className="btn-secondary" onClick={onBack}>&lt;- Back</button>
       </div>
 
       <div className="report-stats">
@@ -800,10 +899,10 @@ function ReportPage({ data, onBack }) {
             <div className={`table-row ${r.ok ? "row-pass" : "row-fail"}`}>
               <span className="row-num">{i + 1}</span>
               <span className="row-label">{r.label}</span>
-              <span className="row-body">{JSON.stringify(r.body).slice(0, 60)}{JSON.stringify(r.body).length > 60 ? "…" : ""}</span>
-              <span className={`badge ${r.ok ? "badge-pass" : "badge-fail"}`}>{r.status ?? "ERR"}</span>
+              <span className="row-body">{JSON.stringify(r.body).slice(0, 60)}{JSON.stringify(r.body).length > 60 ? "..." : ""}</span>
+              <span className={`badge ${r.ok ? "badge-pass" : "badge-fail"}`}>{r.status !== undefined && r.status !== null ? r.status : "ERR"}</span>
               <span className="row-time">{r.elapsed}ms</span>
-              <button className="btn-expand" onClick={() => setExpanded(expanded === i ? null : i)}>{expanded === i ? "▲" : "▼"}</button>
+              <button className="btn-expand" onClick={() => setExpanded(expanded === i ? null : i)}>{expanded === i ? "^" : "v"}</button>
             </div>
             {expanded === i && (
               <div className="row-detail">
@@ -824,7 +923,7 @@ function ReportPage({ data, onBack }) {
   );
 }
 
-// ─── App Shell ────────────────────────────────────────────────────────────────
+// --- App Shell
 export default function App() {
   const [page, setPage] = useState("welcome");
   const [reportData, setReportData] = useState(null);
@@ -841,7 +940,7 @@ export default function App() {
 
   const handleRunTests = (data) => { setReportData(data); setPage("report"); };
 
-  const handleLoadSaved = (api) => { setExplorerConfig(api); setPage("explorer"); };
+  const handleLoadSaved = (api) => { setExplorerConfig({ ...api, _fromSaved: true }); setPage("explorer"); };
 
   const handleRunDirect = async (api) => {
     const auth = loadGlobalAuth();
@@ -892,8 +991,10 @@ export default function App() {
         .welcome-page { display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 65px); background: var(--bg); }
         .welcome-grid-bg { position: fixed; inset: 0; background-image: radial-gradient(circle at 20% 80%, rgba(227,226,247,0.6) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(227,226,247,0.4) 0%, transparent 50%); pointer-events: none; }
         .welcome-content { padding: 80px 64px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        .hero-img-wrap { margin-bottom: 28px; border-radius: 20px; overflow: hidden; box-shadow: 0 12px 40px rgba(35,18,18,0.12), 0 2px 8px rgba(35,18,18,0.06); border: 1px solid var(--border); background: #fff; }
+        .hero-left-svg { width: 100%; height: auto; display: block; }
         .welcome-badge { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent2); background: var(--lavender); padding: 5px 14px; border-radius: 100px; margin-bottom: 28px; font-weight: 500; letter-spacing: 0.5px; }
-        .welcome-title { font-size: clamp(44px, 5vw, 72px); font-weight: 900; line-height: 1.0; margin-bottom: 24px; letter-spacing: -3px; color: var(--accent); }
+        .welcome-title { font-size: clamp(22px, 2.4vw, 34px); font-weight: 900; line-height: 1.12; margin-bottom: 18px; letter-spacing: -1px; color: var(--accent); }
         .title-line1 { display: block; }
         .title-line2 { display: block; font-style: italic; color: var(--accent2); }
         .title-line3 { display: block; }
@@ -904,12 +1005,8 @@ export default function App() {
         .mini-stat { display: flex; flex-direction: column; align-items: center; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 16px 32px; box-shadow: 0 2px 12px rgba(35,18,18,0.06); }
         .mini-num { font-size: 36px; font-weight: 900; color: var(--accent); letter-spacing: -2px; }
         .mini-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; font-weight: 500; }
-        .welcome-visual { position: relative; background: var(--lavender); overflow: hidden; display: flex; flex-direction: column; }
-        /* blurred bg svg */
-        .visual-bg-image { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-        .bg-svg { width: 100%; height: 100%; filter: blur(18px); opacity: 0.7; }
-        /* how to use panel */
-        .how-to-use { position: relative; z-index: 2; padding: 40px 44px; overflow-y: auto; height: 100%; }
+        .welcome-visual { background: var(--lavender); display: flex; flex-direction: column; overflow-y: auto; }
+        .how-to-use { padding: 48px 44px; height: 100%; }
         .how-to-header { margin-bottom: 28px; }
         .how-to-badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent2); background: rgba(108,92,231,0.12); border: 1px solid rgba(108,92,231,0.25); padding: 4px 12px; border-radius: 100px; margin-bottom: 10px; }
         .how-to-title { font-size: 22px; font-weight: 900; color: var(--accent); letter-spacing: -0.5px; }
@@ -1087,8 +1184,8 @@ export default function App() {
         .toggle-input:checked + .toggle-track .toggle-thumb { left: 21px; }
 
         /* Auth banner in Explorer */
-        .global-auth-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--lavender); border: 1px solid rgba(108,92,231,0.25); border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; flex-wrap: wrap; }
-        .global-auth-banner.empty { background: var(--bg3); border-color: var(--border); }
+        .global-auth-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--lavender); border: 1px solid rgba(108,92,231,0.25); border-radius: 12px; padding: 14px 20px; margin-bottom: 20px; flex-wrap: wrap; }
+        .global-auth-banner.empty { background: var(--bg3); border-color: var(--border); justify-content: flex-start; }
         .global-auth-left { display: flex; align-items: center; gap: 12px; }
         .global-auth-icon { font-size: 18px; }
         .global-auth-label { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.8px; display: block; }
@@ -1106,7 +1203,10 @@ export default function App() {
         <div className="nav-logo">Tester<span> Helper</span></div>
         <div className="nav-links">
           {navItems.map(n => (
-            <button key={n.id} className={`nav-btn ${page === n.id ? "active" : ""}`} onClick={() => setPage(n.id)}>{n.label}</button>
+            <button key={n.id} className={`nav-btn ${page === n.id ? "active" : ""}`} onClick={() => {
+              if (n.id === "explorer") setExplorerConfig(null); // always open fresh from nav
+              setPage(n.id);
+            }}>{n.label}</button>
           ))}
         </div>
       </nav>
@@ -1121,7 +1221,10 @@ export default function App() {
         </>
       )}
       {page === "saved" && <SavedPage onLoad={handleLoadSaved} onRunDirect={handleRunDirect} />}
-      {page === "history" && <HistoryPage onViewReport={(run) => { setReportData(run); setPage("report"); }} />}
+      {page === "history" && <HistoryPage
+          onViewReport={(run) => { setReportData(run); setPage("report"); }}
+          onOpenExplorer={(run) => { setExplorerConfig(run); setPage("explorer"); }}
+        />}
       {page === "report" && reportData && <ReportPage data={reportData} onBack={() => setPage(page === "report" ? "history" : "explorer")} />}
     </>
   );
