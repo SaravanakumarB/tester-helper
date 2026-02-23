@@ -194,231 +194,107 @@ function WelcomePage({ onStart, savedCount, historyCount }) {
         <button className="btn-primary btn-lg" onClick={onStart}>Open Explorer →</button>
       </div>
       <div className="welcome-visual">
-        <div className="hero-illustration">
-          <svg viewBox="0 0 620 520" fill="none" xmlns="http://www.w3.org/2000/svg" className="hero-svg">
+        {/* Blurred bg image */}
+        <div className="visual-bg-image">
+          <svg viewBox="0 0 700 600" xmlns="http://www.w3.org/2000/svg" className="bg-svg">
             <defs>
-              <linearGradient id="monitorGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6c5ce7"/>
-                <stop offset="100%" stopColor="#4a3db5"/>
-              </linearGradient>
-              <linearGradient id="laptopScreen" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#e3e2f7"/>
-                <stop offset="100%" stopColor="#d0ceee"/>
-              </linearGradient>
-              <linearGradient id="tabletScreen" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#e3e2f7"/>
-                <stop offset="100%" stopColor="#d0ceee"/>
-              </linearGradient>
-              <linearGradient id="circleGrad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#6c5ce7"/>
-                <stop offset="100%" stopColor="#4a3db5"/>
-              </linearGradient>
-              <filter id="dropshadow" x="-15%" y="-15%" width="130%" height="130%">
-                <feDropShadow dx="0" dy="6" stdDeviation="10" floodColor="#231212" floodOpacity="0.13"/>
-              </filter>
-              <filter id="dropshadowSm" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="3" stdDeviation="5" floodColor="#231212" floodOpacity="0.1"/>
-              </filter>
+              <linearGradient id="bm" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#6c5ce7" stopOpacity="0.18"/><stop offset="100%" stopColor="#231212" stopOpacity="0.08"/></linearGradient>
             </defs>
-
-            {/* ── BACKGROUND ── */}
-            <rect width="620" height="520" fill="#f4f4f4" rx="0"/>
-            {/* soft blobs */}
-            <circle cx="310" cy="260" r="200" fill="#e3e2f7" opacity="0.35"/>
-            <circle cx="80" cy="420" r="70" fill="#e3e2f7" opacity="0.4"/>
-            <circle cx="550" cy="100" r="60" fill="#e3e2f7" opacity="0.3"/>
-
-            {/* ══ CONNECTOR LINES ══ */}
-            {/* Left laptop to monitor */}
-            <path d="M178 350 Q220 350 240 295" stroke="#6c5ce7" strokeWidth="4" strokeLinecap="round" fill="none"/>
-            {/* Right tablet to monitor */}
-            <path d="M442 330 Q420 300 400 295" stroke="#6c5ce7" strokeWidth="4" strokeLinecap="round" fill="none"/>
-            {/* Top-left person circle to monitor */}
-            <path d="M185 140 Q240 140 265 185" stroke="#6c5ce7" strokeWidth="4" strokeLinecap="round" fill="none"/>
-            {/* Top-right phone to monitor */}
-            <path d="M435 140 Q390 140 375 185" stroke="#6c5ce7" strokeWidth="4" strokeLinecap="round" fill="none"/>
-            {/* Bottom gear to monitor */}
-            <path d="M278 400 Q290 360 305 315" stroke="#6c5ce7" strokeWidth="3" strokeDasharray="6,4" strokeLinecap="round" fill="none"/>
-            {/* Search circle to laptop */}
-            <path d="M118 300 Q140 300 145 345" stroke="#6c5ce7" strokeWidth="3" strokeLinecap="round" fill="none"/>
-            {/* Cart circle to tablet */}
-            <path d="M502 300 Q485 310 478 335" stroke="#6c5ce7" strokeWidth="3" strokeLinecap="round" fill="none"/>
-            {/* Wifi to phone */}
-            <path d="M490 115 Q510 120 515 145" stroke="#6c5ce7" strokeWidth="3" strokeLinecap="round" fill="none"/>
-
-            {/* ══ CENTRAL MONITOR ══ */}
-            <g filter="url(#dropshadow)">
-              {/* Monitor body */}
-              <rect x="230" y="155" width="200" height="145" rx="10" fill="#231212"/>
-              {/* Screen */}
-              <rect x="238" y="163" width="184" height="125" rx="6" fill="url(#monitorGrad)"/>
-              {/* API text */}
-              <text x="330" y="237" textAnchor="middle" fontSize="52" fill="white" fontFamily="Satoshi, sans-serif" fontWeight="900" opacity="0.95">API</text>
-              {/* Monitor neck */}
-              <rect x="318" y="300" width="24" height="22" rx="2" fill="#3d2828"/>
-              {/* Monitor stand */}
-              <rect x="290" y="320" width="80" height="8" rx="4" fill="#3d2828"/>
-            </g>
-
-            {/* ══ CLIPBOARD / DOC ══ */}
-            <g filter="url(#dropshadow)" transform="translate(160, 155)">
-              {/* Clipboard back */}
-              <rect x="0" y="10" width="95" height="125" rx="6" fill="#f0eff6" stroke="#e2e0ed" strokeWidth="1.5"/>
-              {/* Clip */}
-              <rect x="28" y="4" width="38" height="16" rx="8" fill="#6c5ce7"/>
-              <rect x="33" y="0" width="28" height="12" rx="6" fill="#4a3db5"/>
-              {/* Paper lines */}
-              <rect x="12" y="40" width="70" height="7" rx="3.5" fill="#6c5ce7" opacity="0.25"/>
-              <rect x="12" y="54" width="70" height="7" rx="3.5" fill="#6c5ce7" opacity="0.18"/>
-              <rect x="12" y="68" width="55" height="7" rx="3.5" fill="#6c5ce7" opacity="0.18"/>
-              <rect x="12" y="82" width="70" height="7" rx="3.5" fill="#6c5ce7" opacity="0.18"/>
-              <rect x="12" y="96" width="62" height="7" rx="3.5" fill="#6c5ce7" opacity="0.18"/>
-              <rect x="12" y="110" width="70" height="7" rx="3.5" fill="#6c5ce7" opacity="0.18"/>
-              {/* Pen */}
-              <rect x="96" y="72" width="8" height="60" rx="4" fill="#231212" transform="rotate(-8, 100, 102)"/>
-              <polygon points="96,128 104,128 100,142" fill="#6c5ce7" transform="rotate(-8, 100, 102)"/>
-            </g>
-
-            {/* ══ BROWSER WINDOW ══ */}
-            <g filter="url(#dropshadow)">
-              <rect x="318" y="280" width="175" height="130" rx="8" fill="white" stroke="#e2e0ed" strokeWidth="1"/>
-              {/* Title bar */}
-              <rect x="318" y="280" width="175" height="22" rx="8" fill="#f0eff6"/>
-              <rect x="318" y="290" width="175" height="12" fill="#f0eff6"/>
-              {/* Traffic lights */}
-              <circle cx="332" cy="291" r="4" fill="#c62828" opacity="0.7"/>
-              <circle cx="346" cy="291" r="4" fill="#f7c96a" opacity="0.9"/>
-              <circle cx="360" cy="291" r="4" fill="#2e7d32" opacity="0.7"/>
-              {/* Content lines */}
-              <rect x="328" y="314" width="100" height="6" rx="3" fill="#6c5ce7" opacity="0.2"/>
-              <rect x="328" y="326" width="145" height="6" rx="3" fill="#231212" opacity="0.12"/>
-              <rect x="328" y="338" width="130" height="6" rx="3" fill="#231212" opacity="0.1"/>
-              <rect x="328" y="350" width="145" height="6" rx="3" fill="#231212" opacity="0.1"/>
-              {/* Red block / response indicator */}
-              <rect x="406" y="358" width="72" height="42" rx="4" fill="#c62828" opacity="0.15"/>
-              <rect x="406" y="358" width="72" height="42" rx="4" stroke="#c62828" strokeWidth="1.5" fill="none" opacity="0.4"/>
-              <text x="442" y="383" textAnchor="middle" fontSize="11" fill="#c62828" fontFamily="JetBrains Mono, monospace" fontWeight="700">400</text>
-            </g>
-
-            {/* ══ LAPTOP (bottom-left) ══ */}
-            <g filter="url(#dropshadow)">
-              {/* Screen */}
-              <rect x="60" y="310" width="160" height="100" rx="8" fill="#231212"/>
-              <rect x="68" y="318" width="144" height="82" rx="4" fill="url(#laptopScreen)"/>
-              {/* Laptop nav bar */}
-              <rect x="68" y="318" width="144" height="16" rx="4" fill="#6c5ce7"/>
-              <rect x="68" y="328" width="144" height="6" fill="#6c5ce7"/>
-              {/* Content blocks */}
-              <rect x="76" y="344" width="60" height="48" rx="4" fill="white" opacity="0.7"/>
-              <rect x="144" y="344" width="60" height="48" rx="4" fill="white" opacity="0.7"/>
-              {/* Inner block detail */}
-              <rect x="82" y="350" width="48" height="6" rx="3" fill="#6c5ce7" opacity="0.3"/>
-              <rect x="82" y="362" width="48" height="22" rx="3" fill="#6c5ce7" opacity="0.15"/>
-              <rect x="150" y="350" width="48" height="6" rx="3" fill="#6c5ce7" opacity="0.3"/>
-              <rect x="150" y="362" width="48" height="22" rx="3" fill="#6c5ce7" opacity="0.15"/>
-              {/* Laptop base */}
-              <rect x="48" y="410" width="184" height="10" rx="4" fill="#3d2828"/>
-              <rect x="60" y="418" width="160" height="4" rx="2" fill="#231212"/>
-            </g>
-
-            {/* ══ TABLET (bottom-right) ══ */}
-            <g filter="url(#dropshadow)">
-              <rect x="412" y="300" width="150" height="120" rx="10" fill="#231212"/>
-              <rect x="420" y="308" width="134" height="104" rx="6" fill="url(#tabletScreen)"/>
-              {/* Tablet nav */}
-              <rect x="420" y="308" width="134" height="15" rx="6" fill="#6c5ce7"/>
-              <rect x="420" y="317" width="134" height="6" fill="#6c5ce7"/>
-              {/* Content */}
-              <rect x="428" y="331" width="58" height="73" rx="4" fill="white" opacity="0.7"/>
-              <rect x="492" y="331" width="54" height="73" rx="4" fill="white" opacity="0.7"/>
-              <rect x="434" y="337" width="46" height="6" rx="3" fill="#6c5ce7" opacity="0.3"/>
-              <rect x="434" y="349" width="46" height="47" rx="3" fill="#6c5ce7" opacity="0.15"/>
-              <rect x="498" y="337" width="42" height="6" rx="3" fill="#6c5ce7" opacity="0.3"/>
-              <rect x="498" y="349" width="42" height="47" rx="3" fill="#6c5ce7" opacity="0.15"/>
-              {/* Home button */}
-              <circle cx="487" cy="418" r="5" fill="#3d2828"/>
-            </g>
-
-            {/* ══ PHONE (top-right) ══ */}
-            <g filter="url(#dropshadow)">
-              <rect x="518" y="130" width="68" height="120" rx="10" fill="#231212"/>
-              <rect x="524" y="138" width="56" height="104" rx="6" fill="#f0eff6"/>
-              {/* Chat bubbles */}
-              <rect x="530" y="148" width="38" height="18" rx="9" fill="#6c5ce7"/>
-              <rect x="536" y="148" width="32" height="18" rx="9" fill="#6c5ce7"/>
-              <rect x="530" y="172" width="30" height="16" rx="8" fill="#e3e2f7" stroke="#6c5ce7" strokeWidth="1"/>
-              <rect x="536" y="194" width="34" height="16" rx="8" fill="#6c5ce7"/>
-              {/* Home indicator */}
-              <rect x="545" y="234" width="18" height="4" rx="2" fill="#3d2828"/>
-            </g>
-
-            {/* ══ ICON CIRCLES ══ */}
-            {/* Person - top left */}
-            <g filter="url(#dropshadowSm)">
-              <circle cx="155" cy="120" r="38" fill="url(#circleGrad)"/>
-              <circle cx="155" cy="110" r="13" fill="white" opacity="0.9"/>
-              <path d="M125 148 Q130 128 155 128 Q180 128 185 148" fill="white" opacity="0.9"/>
-            </g>
-
-            {/* Search - mid left */}
-            <g filter="url(#dropshadowSm)">
-              <circle cx="88" cy="290" r="38" fill="url(#circleGrad)"/>
-              <circle cx="82" cy="284" r="12" stroke="white" strokeWidth="3.5" fill="none"/>
-              <line x1="91" y1="293" x2="102" y2="304" stroke="white" strokeWidth="3.5" strokeLinecap="round"/>
-            </g>
-
-            {/* Wifi - top right */}
-            <g filter="url(#dropshadowSm)">
-              <circle cx="478" cy="100" r="38" fill="url(#circleGrad)"/>
-              <path d="M453 104 Q478 82 503 104" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round"/>
-              <path d="M461 114 Q478 98 495 114" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round"/>
-              <path d="M469 124 Q478 116 487 124" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round"/>
-              <circle cx="478" cy="130" r="4" fill="white"/>
-            </g>
-
-            {/* Cart - mid right */}
-            <g filter="url(#dropshadowSm)">
-              <circle cx="532" cy="285" r="38" fill="url(#circleGrad)"/>
-              <path d="M510 268 L515 268 L524 290 L548 290 L553 275 L519 275" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="526" cy="296" r="4" fill="white"/>
-              <circle cx="544" cy="296" r="4" fill="white"/>
-            </g>
-
-            {/* ══ GEAR (bottom center) ══ */}
-            <g filter="url(#dropshadowSm)">
-              <circle cx="288" cy="415" r="42" fill="url(#circleGrad)"/>
-              {/* Gear teeth */}
-              {[0,45,90,135,180,225,270,315].map((deg, i) => {
-                const rad = (deg * Math.PI) / 180;
-                const x = 288 + 30 * Math.cos(rad);
-                const y = 415 + 30 * Math.sin(rad);
-                return <rect key={i} x={x-5} y={y-5} width="10" height="10" rx="2" fill="white" transform={`rotate(${deg}, ${x}, ${y})`}/>;
-              })}
-              {/* Gear center */}
-              <circle cx="288" cy="415" r="16" fill="url(#circleGrad)"/>
-              <circle cx="288" cy="415" r="9" fill="white"/>
-            </g>
-
-            {/* ══ SPARKLES ══ */}
-            {/* Top left sparkles */}
-            <g opacity="0.6">
-              <path d="M90 170 L94 178 L98 170 L94 162 Z" fill="#6c5ce7"/>
-              <path d="M78 182 L80 188 L82 182 L80 176 Z" fill="#6c5ce7" opacity="0.7"/>
-              <path d="M105 158 L107 163 L109 158 L107 153 Z" fill="#6c5ce7" opacity="0.5"/>
-            </g>
-            {/* Right side sparkles */}
-            <g opacity="0.5">
-              <path d="M470 220 L474 228 L478 220 L474 212 Z" fill="#6c5ce7"/>
-              <path d="M460 235 L462 241 L464 235 L462 229 Z" fill="#6c5ce7" opacity="0.7"/>
-            </g>
-
-            {/* ══ API TESTING LABEL ══ */}
-            <text x="310" y="492" textAnchor="middle" fontSize="30" fill="#6c5ce7" fontFamily="Satoshi, sans-serif" fontWeight="900" letterSpacing="-0.5">API Testing</text>
-
+            {/* Abstract API grid shapes — blurred in background */}
+            <rect x="80" y="60" width="160" height="110" rx="16" fill="url(#bm)"/>
+            <rect x="460" y="80" width="140" height="90" rx="16" fill="url(#bm)"/>
+            <rect x="260" y="200" width="180" height="120" rx="16" fill="url(#bm)"/>
+            <rect x="60" y="300" width="130" height="80" rx="16" fill="url(#bm)"/>
+            <rect x="490" y="300" width="150" height="100" rx="16" fill="url(#bm)"/>
+            <rect x="200" y="430" width="300" height="80" rx="16" fill="url(#bm)"/>
+            {/* Connection lines */}
+            <path d="M160 115 Q310 115 350 260" stroke="#6c5ce7" strokeWidth="2" fill="none" opacity="0.2"/>
+            <path d="M530 125 Q430 125 350 260" stroke="#6c5ce7" strokeWidth="2" fill="none" opacity="0.2"/>
+            <path d="M125 340 Q200 340 260 320" stroke="#6c5ce7" strokeWidth="2" fill="none" opacity="0.2"/>
+            <path d="M565 350 Q490 340 440 320" stroke="#6c5ce7" strokeWidth="2" fill="none" opacity="0.2"/>
+            <path d="M350 320 Q350 400 350 430" stroke="#6c5ce7" strokeWidth="2" fill="none" opacity="0.2"/>
+            {/* Circles */}
+            <circle cx="160" cy="115" r="30" fill="#6c5ce7" opacity="0.12"/>
+            <circle cx="530" cy="125" r="26" fill="#6c5ce7" opacity="0.12"/>
+            <circle cx="350" cy="260" r="40" fill="#231212" opacity="0.08"/>
+            <circle cx="125" cy="340" r="22" fill="#6c5ce7" opacity="0.12"/>
+            <circle cx="565" cy="350" r="22" fill="#6c5ce7" opacity="0.12"/>
           </svg>
         </div>
+
+        {/* How to use guide */}
+        <div className="how-to-use">
+          <div className="how-to-header">
+            <span className="how-to-badge">How it works</span>
+            <h3 className="how-to-title">Get started in 4 steps</h3>
+          </div>
+
+          <div className="steps-list">
+
+            <div className="step-item">
+              <div className="step-num">1</div>
+              <div className="step-content">
+                <div className="step-title">Set Global Authorization <span className="step-tag">Optional</span></div>
+                <div className="step-desc">
+                  Go to <strong>Explorer</strong> → top panel shows <em>🔑 Global Authorization</em>. Paste your Bearer token or API key once. It will be automatically added to every API request.
+                </div>
+              </div>
+            </div>
+
+            <div className="step-item">
+              <div className="step-num">2</div>
+              <div className="step-content">
+                <div className="step-title">Configure Your API</div>
+                <div className="step-desc">
+                  In the <strong>Explorer</strong>, enter your API URL and select method (GET, POST…). Use the <em>Body</em> tab for JSON payload, <em>Headers</em> tab for custom headers, or <em>GraphQL</em> tab for mutations/queries.
+                </div>
+                <div className="step-chips">
+                  <span className="step-chip">REST</span>
+                  <span className="step-chip">GraphQL</span>
+                  <span className="step-chip">Headers</span>
+                  <span className="step-chip">Auth</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="step-item">
+              <div className="step-num">3</div>
+              <div className="step-content">
+                <div className="step-title">Add Mandatory Keys</div>
+                <div className="step-desc">
+                  Add the required fields of your API (e.g. <code>email</code>, <code>password</code>). The app auto-generates <strong>positive</strong> and <strong>negative</strong> test cases — setting each key to <code>null</code> and <code>""</code> one at a time.
+                </div>
+              </div>
+            </div>
+
+            <div className="step-item">
+              <div className="step-num">4</div>
+              <div className="step-content">
+                <div className="step-title">Run Tests & View Report</div>
+                <div className="step-desc">
+                  Click <strong>▶ Run Tests</strong>. Each scenario is hit live and the <em>Report</em> shows status code, response time, full request body and response — side by side. All runs are saved in <strong>History</strong>.
+                </div>
+                <div className="step-chips">
+                  <span className="step-chip green">200 OK</span>
+                  <span className="step-chip red">400 Error</span>
+                  <span className="step-chip purple">Response time</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="step-item">
+              <div className="step-num">💾</div>
+              <div className="step-content">
+                <div className="step-title">Save, Export & Import</div>
+                <div className="step-desc">
+                  Save any API config via <strong>＋ Save API</strong>. Revisit from <em>Saved APIs</em> page — load into Explorer, run directly, or <strong>export</strong> as JSON to share with teammates. Import configs shared by others in one click.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
-    </div>
   );
 }
 
@@ -1028,9 +904,32 @@ export default function App() {
         .mini-stat { display: flex; flex-direction: column; align-items: center; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 16px 32px; box-shadow: 0 2px 12px rgba(35,18,18,0.06); }
         .mini-num { font-size: 36px; font-weight: 900; color: var(--accent); letter-spacing: -2px; }
         .mini-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; font-weight: 500; }
-        .welcome-visual { display: flex; align-items: center; justify-content: center; background: var(--lavender); overflow: hidden; position: relative; }
-        .hero-illustration { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 40px; }
-        .hero-svg { width: 100%; max-width: 540px; height: auto; filter: drop-shadow(0 4px 24px rgba(35,18,18,0.06)); }
+        .welcome-visual { position: relative; background: var(--lavender); overflow: hidden; display: flex; flex-direction: column; }
+        /* blurred bg svg */
+        .visual-bg-image { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .bg-svg { width: 100%; height: 100%; filter: blur(18px); opacity: 0.7; }
+        /* how to use panel */
+        .how-to-use { position: relative; z-index: 2; padding: 40px 44px; overflow-y: auto; height: 100%; }
+        .how-to-header { margin-bottom: 28px; }
+        .how-to-badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent2); background: rgba(108,92,231,0.12); border: 1px solid rgba(108,92,231,0.25); padding: 4px 12px; border-radius: 100px; margin-bottom: 10px; }
+        .how-to-title { font-size: 22px; font-weight: 900; color: var(--accent); letter-spacing: -0.5px; }
+        /* steps */
+        .steps-list { display: flex; flex-direction: column; gap: 0; }
+        .step-item { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid rgba(35,18,18,0.07); position: relative; }
+        .step-item:last-child { border-bottom: none; }
+        .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; box-shadow: 0 2px 8px rgba(35,18,18,0.18); }
+        .step-content { flex: 1; min-width: 0; }
+        .step-title { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .step-tag { font-size: 10px; font-weight: 600; background: rgba(108,92,231,0.12); color: var(--accent2); padding: 2px 8px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .step-desc { font-size: 13px; color: #5a4f4f; line-height: 1.65; }
+        .step-desc strong { color: var(--accent); font-weight: 700; }
+        .step-desc em { color: var(--accent2); font-style: normal; font-weight: 600; }
+        .step-desc code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(35,18,18,0.07); padding: 1px 6px; border-radius: 4px; color: var(--accent); }
+        .step-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .step-chip { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; background: rgba(35,18,18,0.07); color: var(--muted); border: 1px solid rgba(35,18,18,0.1); font-family: 'JetBrains Mono', monospace; }
+        .step-chip.green { background: rgba(46,125,50,0.1); color: #2e7d32; border-color: rgba(46,125,50,0.2); }
+        .step-chip.red { background: rgba(198,40,40,0.1); color: #c62828; border-color: rgba(198,40,40,0.2); }
+        .step-chip.purple { background: rgba(108,92,231,0.1); color: var(--accent2); border-color: rgba(108,92,231,0.2); }
         .code-line { padding: 4px 0; }
         .c-key { color: var(--accent); font-weight: 500; } .c-op { color: var(--muted); margin: 0 6px; } .c-str { color: var(--accent2); }
         .code-divider { border-top: 1px solid var(--border); margin: 16px 0; }
