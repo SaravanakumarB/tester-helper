@@ -3,11 +3,17 @@ import { useState, useEffect } from "react";
 // ─── localStorage helpers ────────────────────────────────────────────────────
 const LS_SAVED = "apiprobe_saved_apis";
 const LS_HISTORY = "apiprobe_history";
+const LS_AUTH = "apiprobe_global_auth";
 
 function loadSaved() {
   try { return JSON.parse(localStorage.getItem(LS_SAVED) || "[]"); } catch { return []; }
 }
 function saveSaved(list) { localStorage.setItem(LS_SAVED, JSON.stringify(list)); }
+
+function loadGlobalAuth() {
+  try { return JSON.parse(localStorage.getItem(LS_AUTH) || '{"type":"Bearer","token":"","enabled":true}'); } catch { return { type: "Bearer", token: "", enabled: true }; }
+}
+function saveGlobalAuth(auth) { localStorage.setItem(LS_AUTH, JSON.stringify(auth)); }
 
 function loadHistory() {
   try { return JSON.parse(localStorage.getItem(LS_HISTORY) || "[]"); } catch { return []; }
@@ -47,11 +53,15 @@ function extractOperationName(queryStr) {
   return match ? match[1] : undefined;
 }
 
-async function hitApi(url, method, headers, bodyObj, isGraphQL, graphqlQuery, operationName) {
+async function hitApi(url, method, headers, bodyObj, isGraphQL, graphqlQuery, operationName, globalAuth, useGlobalAuth) {
   const start = performance.now();
   try {
     const headersObj = {};
     headers.forEach(({ key, value }) => { if (key) headersObj[key] = value; });
+    // Inject global auth header if enabled and api opts in
+    if (globalAuth && globalAuth.enabled && globalAuth.token && useGlobalAuth !== false) {
+      headersObj["Authorization"] = `${globalAuth.type} ${globalAuth.token}`;
+    }
     if (!headersObj["Content-Type"] && !headersObj["content-type"]) headersObj["Content-Type"] = "application/json";
 
     let body;
@@ -85,6 +95,52 @@ function formatDate(ts) {
 
 function shortUrl(url) {
   try { const u = new URL(url); return u.hostname + u.pathname; } catch { return url; }
+}
+
+// ─── Global Auth Panel ───────────────────────────────────────────────────────
+function GlobalAuthPanel() {
+  const [auth, setAuth] = useState(loadGlobalAuth());
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    saveGlobalAuth(auth);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div className="global-auth-panel">
+      <div className="global-auth-panel-header">
+        <div>
+          <span className="global-auth-panel-title">🔑 Global Authorization</span>
+          <span className="global-auth-panel-sub">Applied to all APIs (unless disabled per-API)</span>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          {saved && <span className="save-toast">✓ Saved!</span>}
+          <label className="toggle-label">
+            <input type="checkbox" checked={auth.enabled} onChange={e => setAuth({...auth, enabled: e.target.checked})} className="toggle-input"/>
+            <span className="toggle-track"><span className="toggle-thumb"/></span>
+            <span style={{fontSize:13,color:auth.enabled?"var(--accent)":"var(--muted)",fontWeight:600}}>{auth.enabled ? "Enabled" : "Disabled"}</span>
+          </label>
+        </div>
+      </div>
+      <div className="global-auth-fields">
+        <select className="method-select" value={auth.type} onChange={e => setAuth({...auth, type: e.target.value})} style={{minWidth:120}}>
+          {["Bearer","Basic","ApiKey","Token","Custom"].map(t => <option key={t}>{t}</option>)}
+        </select>
+        <input
+          className="url-input"
+          type="text"
+          placeholder="Paste your token or key here…"
+          value={auth.token}
+          onChange={e => setAuth({...auth, token: e.target.value})}
+          style={{flex:1}}
+        />
+        <button className="btn-primary btn-sm" onClick={handleSave} style={{borderRadius:100,whiteSpace:"nowrap"}}>Save Auth</button>
+        {auth.token && <button className="btn-danger btn-sm" onClick={() => { const a={...auth,token:""}; setAuth(a); saveGlobalAuth(a); }}>Clear</button>}
+      </div>
+    </div>
+  );
 }
 
 // ─── Save API Modal ──────────────────────────────────────────────────────────
@@ -367,7 +423,7 @@ function WelcomePage({ onStart, savedCount, historyCount }) {
 }
 
 // ─── Page: Explorer ──────────────────────────────────────────────────────────
-function ExplorerPage({ onRunTests, initialConfig }) {
+function ExplorerPage({ onRunTests, initialConfig, globalAuth }) {
   const [url, setUrl] = useState(initialConfig?.url || "https://jsonplaceholder.typicode.com/posts");
   const [method, setMethod] = useState(initialConfig?.method || "POST");
   const [body, setBody] = useState(initialConfig?.body || `{\n  "title": "Hello",\n  "body": "World",\n  "userId": 1\n}`);
@@ -382,6 +438,7 @@ function ExplorerPage({ onRunTests, initialConfig }) {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [editingId] = useState(initialConfig?.id || null);
+  const [useGlobalAuth, setUseGlobalAuth] = useState(initialConfig?.useGlobalAuth !== false);
 
   // sync if initialConfig changes (load from saved)
   useEffect(() => {
@@ -396,10 +453,11 @@ function ExplorerPage({ onRunTests, initialConfig }) {
       setGraphqlQuery(initialConfig.graphqlQuery || "");
       setOperationName(initialConfig.operationName || "");
       if (gql) setTab("graphql");
+      setUseGlobalAuth(initialConfig.useGlobalAuth !== false);
     }
   }, [initialConfig]);
 
-  const currentConfig = () => ({ url, method, body, headers, mandatoryKeys, isGraphQL, graphqlQuery, operationName });
+  const currentConfig = () => ({ url, method, body, headers, mandatoryKeys, isGraphQL, graphqlQuery, operationName, useGlobalAuth });
 
   const handleSave = (name, desc) => {
     const list = loadSaved();
@@ -420,10 +478,10 @@ function ExplorerPage({ onRunTests, initialConfig }) {
     const scenarios = generateScenarios(body, mandatoryKeys);
     const results = [];
     for (const s of scenarios) {
-      const res = await hitApi(url, method, headers, s.body, isGraphQL, graphqlQuery, operationName);
+      const res = await hitApi(url, method, headers, s.body, isGraphQL, graphqlQuery, operationName, globalAuth, useGlobalAuth);
       results.push({ ...s, ...res });
     }
-    const runData = { id: Date.now().toString(), timestamp: Date.now(), url, method, headers, body, mandatoryKeys, isGraphQL, graphqlQuery, operationName, results };
+    const runData = { id: Date.now().toString(), timestamp: Date.now(), url, method, headers, body, mandatoryKeys, isGraphQL, graphqlQuery, operationName, useGlobalAuth, results };
     addToHistory(runData);
     setLoading(false);
     onRunTests(runData);
@@ -449,6 +507,29 @@ function ExplorerPage({ onRunTests, initialConfig }) {
           </button>
         </div>
       </div>
+
+      {/* ── Global Auth Banner ── */}
+      {globalAuth && globalAuth.token && (
+        <div className="global-auth-banner">
+          <div className="global-auth-left">
+            <span className="global-auth-icon">🔑</span>
+            <div>
+              <span className="global-auth-label">Global Authorization</span>
+              <span className="global-auth-value">{globalAuth.type} {globalAuth.token.slice(0,12)}•••</span>
+            </div>
+          </div>
+          <label className="auth-checkbox-label">
+            <input type="checkbox" checked={useGlobalAuth} onChange={e => setUseGlobalAuth(e.target.checked)} className="auth-checkbox"/>
+            <span>Use for this API</span>
+          </label>
+        </div>
+      )}
+      {globalAuth && !globalAuth.token && (
+        <div className="global-auth-banner empty">
+          <span className="global-auth-icon">🔑</span>
+          <span style={{color:"var(--muted)",fontSize:13}}>No global auth set — configure it in the <strong>Auth</strong> section above the explorer</span>
+        </div>
+      )}
 
       <div className="explorer-body">
         <div className="config-panel">
@@ -565,6 +646,8 @@ function SavedPage({ onLoad, onRunDirect }) {
   const [saved, setSaved] = useState(loadSaved());
   const [search, setSearch] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [importError, setImportError] = useState("");
+  const [importSuccess, setImportSuccess] = useState("");
 
   const refresh = () => setSaved(loadSaved());
 
@@ -575,12 +658,65 @@ function SavedPage({ onLoad, onRunDirect }) {
     refresh();
   };
 
+  // Export single API as JSON file
+  const exportOne = (api) => {
+    const data = JSON.stringify([api], null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${api.name.replace(/\s+/g, "_")}_api.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Export all APIs as JSON file
+  const exportAll = () => {
+    const data = JSON.stringify(loadSaved(), null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tester_helper_all_apis_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Import APIs from JSON file
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImportError("");
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        const apis = Array.isArray(parsed) ? parsed : [parsed];
+        // Validate basic shape
+        if (!apis.every(a => a.url && a.method)) throw new Error("Invalid format — each API needs url and method");
+        const existing = loadSaved();
+        // Merge: skip duplicates by id, add new ones
+        const existingIds = new Set(existing.map(a => a.id));
+        const newApis = apis.filter(a => !existingIds.has(a.id));
+        const merged = [...newApis, ...existing];
+        saveSaved(merged);
+        refresh();
+        setImportSuccess(`✓ Imported ${newApis.length} API${newApis.length !== 1 ? "s" : ""} (${apis.length - newApis.length} skipped as duplicates)`);
+        setTimeout(() => setImportSuccess(""), 4000);
+      } catch (err) {
+        setImportError("Import failed: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // reset so same file can be re-imported
+  };
+
   const filtered = saved.filter(a =>
     a.name.toLowerCase().includes(search.toLowerCase()) ||
     (a.url || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const methodColor = { GET: "#4ecca3", POST: "#7c6af7", PUT: "#f7c96a", PATCH: "#f7a06a", DELETE: "#f7546a" };
+  const methodColor = { GET: "#2e7d32", POST: "#6c5ce7", PUT: "#f59e0b", PATCH: "#ea580c", DELETE: "#c62828" };
 
   return (
     <div className="saved-page">
@@ -589,8 +725,25 @@ function SavedPage({ onLoad, onRunDirect }) {
           <h2 className="page-title">Saved APIs</h2>
           <p className="page-sub">{saved.length} saved — load into Explorer or run directly</p>
         </div>
-        <input className="search-input" placeholder="🔍  Search by name or URL…" value={search} onChange={e => setSearch(e.target.value)} />
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+          <input className="search-input" placeholder="🔍  Search by name or URL…" value={search} onChange={e => setSearch(e.target.value)} />
+          {/* Import */}
+          <label className="btn-secondary" style={{cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6,padding:"10px 18px",borderRadius:100,fontSize:13,fontWeight:500,border:"1px solid var(--border)",background:"var(--bg2)"}}>
+            ⬆ Import
+            <input type="file" accept=".json" onChange={handleImport} style={{display:"none"}}/>
+          </label>
+          {/* Export All */}
+          {saved.length > 0 && (
+            <button className="btn-secondary" style={{borderRadius:100,fontSize:13,fontWeight:500}} onClick={exportAll}>
+              ⬇ Export All
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Import feedback */}
+      {importSuccess && <div className="import-toast success">{importSuccess}</div>}
+      {importError && <div className="import-toast error">{importError}</div>}
 
       {filtered.length === 0 && (
         <div className="empty-state">
@@ -605,10 +758,13 @@ function SavedPage({ onLoad, onRunDirect }) {
           <div className="saved-card" key={api.id}>
             <div className="saved-card-top">
               <div className="saved-card-info">
-                <span className="method-badge" style={{ background: `${methodColor[api.method] || "#888"}22`, color: methodColor[api.method] || "#888", border: `1px solid ${methodColor[api.method] || "#888"}44` }}>{api.method}</span>
+                <span className="method-badge" style={{ background: `${methodColor[api.method] || "#888"}18`, color: methodColor[api.method] || "#888", border: `1px solid ${methodColor[api.method] || "#888"}33` }}>{api.method}</span>
                 <span className="saved-name">{api.name}</span>
               </div>
-              <button className="btn-icon remove" onClick={() => setDeleteConfirm(api.id)} title="Delete">✕</button>
+              <div style={{display:"flex",gap:4}}>
+                <button className="btn-icon" onClick={() => exportOne(api)} title="Export this API" style={{color:"var(--accent2)"}}>⬇</button>
+                <button className="btn-icon remove" onClick={() => setDeleteConfirm(api.id)} title="Delete">✕</button>
+              </div>
             </div>
             <div className="saved-url">{shortUrl(api.url)}</div>
             {api.desc && <div className="saved-desc">{api.desc}</div>}
@@ -616,6 +772,7 @@ function SavedPage({ onLoad, onRunDirect }) {
               <span>{api.mandatoryKeys?.length || 0} mandatory keys</span>
               <span>·</span>
               <span>{api.isGraphQL ? "GraphQL" : "REST"}</span>
+              {api.useGlobalAuth !== false && <><span>·</span><span style={{color:"var(--accent2)"}}>🔑 Auth</span></>}
               <span>·</span>
               <span>{formatDate(api.createdAt)}</span>
             </div>
@@ -796,6 +953,12 @@ export default function App() {
   const [page, setPage] = useState("welcome");
   const [reportData, setReportData] = useState(null);
   const [explorerConfig, setExplorerConfig] = useState(null);
+  const [globalAuth, setGlobalAuth] = useState(loadGlobalAuth());
+
+  // Re-read auth whenever page changes to explorer (in case it was updated)
+  useEffect(() => {
+    if (page === "explorer") setGlobalAuth(loadGlobalAuth());
+  }, [page]);
 
   const savedCount = loadSaved().length;
   const historyCount = loadHistory().length;
@@ -805,10 +968,11 @@ export default function App() {
   const handleLoadSaved = (api) => { setExplorerConfig(api); setPage("explorer"); };
 
   const handleRunDirect = async (api) => {
+    const auth = loadGlobalAuth();
     const scenarios = generateScenarios(api.body, api.mandatoryKeys);
     const results = [];
     for (const s of scenarios) {
-      const res = await hitApi(api.url, api.method, api.headers, s.body, api.isGraphQL, api.graphqlQuery, api.operationName);
+      const res = await hitApi(api.url, api.method, api.headers, s.body, api.isGraphQL, api.graphqlQuery, api.operationName, auth, api.useGlobalAuth);
       results.push({ ...s, ...res });
     }
     const runData = { id: Date.now().toString(), timestamp: Date.now(), ...api, results };
@@ -1007,6 +1171,36 @@ export default function App() {
         .row-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px 22px; background: var(--bg3); border-bottom: 1px solid var(--border); }
         .detail-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; font-weight: 700; }
         .detail-pre { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; overflow: auto; max-height: 200px; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
+
+        /* GLOBAL AUTH PANEL */
+        .global-auth-panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(35,18,18,0.05); display: flex; flex-direction: column; gap: 14px; }
+        .global-auth-panel-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .global-auth-panel-title { font-size: 15px; font-weight: 700; color: var(--accent); display: block; }
+        .global-auth-panel-sub { font-size: 12px; color: var(--muted); margin-top: 2px; display: block; }
+        .global-auth-fields { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+        /* Toggle switch */
+        .toggle-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .toggle-input { display: none; }
+        .toggle-track { width: 40px; height: 22px; background: var(--border); border-radius: 11px; position: relative; transition: background 0.2s; display: inline-block; flex-shrink: 0; }
+        .toggle-input:checked + .toggle-track { background: var(--accent); }
+        .toggle-thumb { width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .toggle-input:checked + .toggle-track .toggle-thumb { left: 21px; }
+
+        /* Auth banner in Explorer */
+        .global-auth-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--lavender); border: 1px solid rgba(108,92,231,0.25); border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; flex-wrap: wrap; }
+        .global-auth-banner.empty { background: var(--bg3); border-color: var(--border); }
+        .global-auth-left { display: flex; align-items: center; gap: 12px; }
+        .global-auth-icon { font-size: 18px; }
+        .global-auth-label { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.8px; display: block; }
+        .global-auth-value { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent2); display: block; margin-top: 2px; }
+        .auth-checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--accent); }
+        .auth-checkbox { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+        /* Import/Export toasts */
+        .import-toast { padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
+        .import-toast.success { background: rgba(46,125,50,0.08); border: 1px solid rgba(46,125,50,0.25); color: var(--pass); }
+        .import-toast.error { background: rgba(198,40,40,0.08); border: 1px solid rgba(198,40,40,0.25); color: var(--fail); }
       `}</style>
 
       <nav className="nav">
@@ -1019,7 +1213,14 @@ export default function App() {
       </nav>
 
       {page === "welcome" && <WelcomePage onStart={() => setPage("explorer")} savedCount={savedCount} historyCount={historyCount} />}
-      {page === "explorer" && <ExplorerPage onRunTests={handleRunTests} initialConfig={explorerConfig} />}
+      {page === "explorer" && (
+        <>
+          <div style={{maxWidth:1280,margin:"0 auto",padding:"24px 48px 0"}}>
+            <GlobalAuthPanel />
+          </div>
+          <ExplorerPage onRunTests={handleRunTests} initialConfig={explorerConfig} globalAuth={globalAuth} />
+        </>
+      )}
       {page === "saved" && <SavedPage onLoad={handleLoadSaved} onRunDirect={handleRunDirect} />}
       {page === "history" && <HistoryPage onViewReport={(run) => { setReportData(run); setPage("report"); }} />}
       {page === "report" && reportData && <ReportPage data={reportData} onBack={() => setPage(page === "report" ? "history" : "explorer")} />}
