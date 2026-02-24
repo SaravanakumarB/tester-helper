@@ -401,7 +401,8 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp })
   const [tab, setTab] = useState("body");
   const [loading, setLoading] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isSaved, setIsSaved] = useState(initialConfig && initialConfig._fromSaved ? true : false);
+  const [isDirty, setIsDirty] = useState(false);
   const [editingId] = useState(initialConfig && initialConfig._fromSaved ? initialConfig.id : null);
   const [useGlobalAuth, setUseGlobalAuth] = useState(initialConfig ? initialConfig.useGlobalAuth !== false : true);
 
@@ -423,6 +424,7 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp })
   }, [initialConfig]);
 
   const currentConfig = () => ({ url, method, body, headers, mandatoryKeys, isGraphQL, graphqlQuery, operationName, useGlobalAuth });
+  const markDirty = () => { if (isSaved) setIsDirty(true); };
 
   const handleSave = (name, desc) => {
     const list = loadSaved();
@@ -431,7 +433,6 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp })
       if (idx !== -1) {
         list[idx] = { ...list[idx], ...currentConfig(), name, desc, updatedAt: Date.now() };
       } else {
-        // Not found in saved (e.g. came from history) - save as new
         list.unshift({ id: Date.now().toString(), name, desc, ...currentConfig(), createdAt: Date.now() });
       }
     } else {
@@ -439,8 +440,8 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp })
     }
     saveSaved(list);
     setShowSaveModal(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 2500);
+    setIsSaved(true);
+    setIsDirty(false);
   };
 
   const handleSubmit = async () => {
@@ -457,11 +458,11 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp })
     onRunTests(runData);
   };
 
-  const addHeader = () => setHeaders([...headers, { key: "", value: "" }]);
-  const removeHeader = (i) => setHeaders(headers.filter((_, idx) => idx !== i));
+  const addHeader = () => { setHeaders([...headers, { key: "", value: "" }]); markDirty(); };
+  const removeHeader = (i) => { setHeaders(headers.filter((_, idx) => idx !== i)); markDirty(); };
   const updateHeader = (i, field, val) => { const h = [...headers]; h[i][field] = val; setHeaders(h); };
-  const addMandatoryKey = () => { if (newKey.trim()) { setMandatoryKeys([...mandatoryKeys, newKey.trim()]); setNewKey(""); } };
-  const removeMandatoryKey = (i) => setMandatoryKeys(mandatoryKeys.filter((_, idx) => idx !== i));
+  const addMandatoryKey = () => { if (newKey.trim()) { setMandatoryKeys([...mandatoryKeys, newKey.trim()]); setNewKey(""); markDirty(); } };
+  const removeMandatoryKey = (i) => { setMandatoryKeys(mandatoryKeys.filter((_, idx) => idx !== i)); markDirty(); };
 
   return (
     <div className="explorer-page">
@@ -471,11 +472,11 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp })
           <p className="explorer-sub">Configure your API and define mandatory fields to auto-generate test scenarios.</p>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          {saveSuccess
-            ? <span className="save-toast" style={{padding:"10px 22px",borderRadius:100,fontSize:14,fontWeight:700}}>Saved!</span>
-            : <button className="btn-secondary" onClick={() => setShowSaveModal(true)}>
-                {editingId ? "Update Saved API" : "+ Save API"}
-              </button>
+          {isSaved && !isDirty
+            ? <span className="save-badge-saved">Saved</span>
+            : isSaved && isDirty
+              ? <button className="btn-secondary" onClick={() => setShowSaveModal(true)}>Update Changes</button>
+              : <button className="btn-secondary" onClick={() => setShowSaveModal(true)}>+ Save API</button>
           }
         </div>
       </div>
@@ -510,10 +511,10 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp })
           <div className="panel-section">
             <label className="field-label">Request URL</label>
             <div className="url-row">
-              <select className="method-select" value={method} onChange={e => setMethod(e.target.value)}>
+              <select className="method-select" value={method} onChange={e => { setMethod(e.target.value); markDirty(); }}>
                 {["GET","POST","PUT","PATCH","DELETE"].map(m => <option key={m}>{m}</option>)}
               </select>
-              <input className="url-input" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://api.example.com/endpoint" />
+              <input className="url-input" value={url} onChange={e => { setUrl(e.target.value); markDirty(); }} placeholder="https://api.example.com/endpoint" />
             </div>
           </div>
 
@@ -530,7 +531,7 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp })
                 </button>
               ))}
             </div>
-            {tab === "body" && <textarea className="code-textarea" value={body} onChange={e => setBody(e.target.value)} placeholder='{ "key": "value" }' rows={10} />}
+            {tab === "body" && <textarea className="code-textarea" value={body} onChange={e => { setBody(e.target.value); markDirty(); }} placeholder='{ "key": "value" }' rows={10} />}
             {tab === "headers" && (
               <div className="headers-editor">
                 {headers.map((h, i) => (
@@ -553,7 +554,7 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp })
                       className="url-input"
                       placeholder="e.g. VerifyEmailUser (auto-detected from query)"
                       value={operationName || extractOperationName(graphqlQuery) || ""}
-                      onChange={e => setOperationName(e.target.value)}
+                      onChange={e => { setOperationName(e.target.value); markDirty(); }}
                     />
                     {extractOperationName(graphqlQuery) && !operationName && (
                       <span style={{fontSize:12,color:"var(--accent2)",whiteSpace:"nowrap",fontFamily:"'JetBrains Mono',monospace"}}>
@@ -567,7 +568,7 @@ function ExplorerPage({ onRunTests, initialConfig, globalAuth: globalAuthProp })
                   <textarea
                     className="code-textarea graphql"
                     value={graphqlQuery}
-                    onChange={e => { setGraphqlQuery(e.target.value); if (!operationName) setOperationName(""); }}
+                    onChange={e => { setGraphqlQuery(e.target.value); if (!operationName) setOperationName(""); markDirty(); }}
                     placeholder="mutation MyOp($input: MyInput!) { ... }"
                     rows={12}
                   />
@@ -1095,6 +1096,8 @@ export default function App() {
         .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .save-toast { font-size: 13px; color: var(--pass); font-family: 'JetBrains Mono', monospace; padding: 8px 16px; background: rgba(46,125,50,0.08); border: 1px solid rgba(46,125,50,0.2); border-radius: 100px; }
+        .save-badge-saved { font-size: 13px; font-weight: 700; color: var(--pass); font-family: 'JetBrains Mono', monospace; padding: 10px 22px; background: rgba(46,125,50,0.08); border: 1px solid rgba(46,125,50,0.2); border-radius: 100px; display: inline-flex; align-items: center; gap: 6px; }
+        .save-badge-saved::before { content: "v"; font-size: 11px; }
 
         /* SAVED & HISTORY SHARED */
         .saved-page, .history-page { padding: 44px 48px; max-width: 1280px; margin: 0 auto; }
